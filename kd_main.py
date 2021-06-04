@@ -61,7 +61,7 @@ def kd_train(model, teacher_model, train_loader, optimizer, cutmix_prob, alpha, 
 
                 # cam = grad.grad_cam(input_img, 224, img_label)
                 cam = grad.feature_map(input_img, 224)
-                replace_data, target, lamb = grad.teacher_cut_mix(input_img, img_label, cam, (100, 100), trainset)
+                replace_data, target, lamb = grad.teacher_cut_mix(input_img, img_label, cam, (150, 150), trainset)
 
                 replace_data = replace_data.to(device)
 
