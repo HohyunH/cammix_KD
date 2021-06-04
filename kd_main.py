@@ -10,6 +10,7 @@ from torchvision import models
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset, DataLoader
 
+from model import SimpleCNN
 from dataloader import Intel
 from gradcam import Activation_mix
 
@@ -38,14 +39,14 @@ def kd_train(model, teacher_model, train_loader, optimizer, cutmix_prob, alpha, 
     best_loss = np.inf
     grad = Activation_mix(model)
 
-    # alpha = 0.1
-    # T = 0.1
+    alpha = 0.1
+    T = 0.1
 
     trn_plot = []
     trn_loss = 0
     for i, (input, label) in enumerate(train_loader):
 
-        # input, label = input.to(device), label.to(device)
+        input, label = input.to(device), label.to(device)
         r = np.random.rand(1)
 
         if r < cutmix_prob:
@@ -58,7 +59,8 @@ def kd_train(model, teacher_model, train_loader, optimizer, cutmix_prob, alpha, 
                 with torch.no_grad():
                     teacher_output = teacher_model(input_img)
 
-                cam = grad.grad_cam(input_img, 224, img_label)
+                # cam = grad.grad_cam(input_img, 224, img_label)
+                cam = grad.feature_map(input_img, 224)
                 replace_data, target, lamb = grad.teacher_cut_mix(input_img, img_label, cam, (100, 100), trainset)
 
                 replace_data = replace_data.to(device)
@@ -83,23 +85,25 @@ def kd_train(model, teacher_model, train_loader, optimizer, cutmix_prob, alpha, 
 
             output = model(input)
             loss = loss_fn_kd(output, label, teacher_outputs, alpha, T)
-            print("using normal loss")
-            trn_plot.append(loss)
+        # print("using normal loss")
         trn_loss += loss
-        print(f"training loss = {loss}")
+        trn_plot.append(loss)
+
+        if i%30 == 0:
+            print(f"training loss = {loss}")
+        trn_loss = trn_loss / input.size(0)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-
         if trn_loss < best_loss:
             print('Best performance at epoch: {}, average_loss : {}'.format(e, trn_loss))
             best_loss = trn_loss
             # save_model(model, saved_dir)
-            torch.save(model.state_dict(), './model/kd_model_18.pth')
+            torch.save(model.state_dict(), './model/just_kd_model_18.pth')
 
     trn_loss = trn_loss / len(train_loader)
 
-    plt.plot(trn_plot)
+    # plt.plot(trn_plot.cpu().numpy())
     return trn_loss
 
 
@@ -131,12 +135,25 @@ if __name__=="__main__":
     parser.add_argument('--model', type=str, default='resnet50', help='determining the kind of model')
     parser.add_argument('--cammix_prob', type=float, default='0.5', help='Input the probability of cammix')
     parser.add_argument('--epoch', type=int, default='5', help='Input the number of epoch')
+    parser.add_argument('--device', type=str, default='cpu', help='determining the kind of device')
 
     args = parser.parse_args()
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = args.device
 
-    transform = transforms.Compose([transforms.Resize([224, 224]), transforms.ToTensor()])
+    data_transforms = {
+        'train': transforms.Compose([
+            transforms.RandomRotation(5),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomCrop(120),
+            transforms.Resize([224, 224]),
+            transforms.ToTensor()
+        ]),
+        'test': transforms.Compose([
+            transforms.Resize([224, 224]),
+            transforms.ToTensor()
+        ]),
+    }
 
     if args.teacher == "resnet18":
         model = models.resnet18(pretrained=True)
@@ -145,25 +162,28 @@ if __name__=="__main__":
     model = model.to(device)
     num_ftrs = model.fc.in_features
     model.fc = nn.Linear(num_ftrs, 6)
-    model.load_state_dict(torch.load("./model/best_model_18.pth"))
+    model.load_state_dict(torch.load("./model/best_model_50.pth"))
 
-    if args.model == "resnet18":
-        teacher_model = models.resnet18(pretrained=True)
+    if args.model == "CNN":
+        teacher_model = SimpleCNN()
     else :
-        teacher_model = models.resnet50(pretrained=True)
+        if args.model == "resnet18":
+            teacher_model = models.resnet18(pretrained=True)
+        else :
+            teacher_model = models.resnet50(pretrained=True)
 
+        num_ftrs = teacher_model.fc.in_features
+        teacher_model.fc = nn.Linear(num_ftrs, 6)
+        teacher_model.load_state_dict(torch.load("./model/just_kd_model_18.pth"))
     teacher_model = teacher_model.to(device)
-    num_ftrs = teacher_model.fc.in_features
-    teacher_model.fc = nn.Linear(num_ftrs, 6)
-
     criterion = nn.CrossEntropyLoss().to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-    trainset = Intel(data_dir="./dataset", mode='train', transform=transform)
-    testset = Intel(data_dir="./dataset", mode='test', transform=transform)
+    trainset = Intel(data_dir="./dataset", mode='train', transform=data_transforms['train'])
+    testset = Intel(data_dir="./dataset", mode='test', transform=data_transforms['test'])
 
-    trainloader = DataLoader(trainset, batch_size=32, shuffle=True, drop_last=True)
-    testloader = DataLoader(testset, batch_size=32, shuffle=False, drop_last=True)
+    trainloader = DataLoader(trainset, batch_size=16, shuffle=True, drop_last=True)
+    testloader = DataLoader(testset, batch_size=16, shuffle=False, drop_last=True)
 
     for e in range(1, args.epoch+1):
         print(f"{e} epochs processing")

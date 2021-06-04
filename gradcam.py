@@ -23,7 +23,6 @@ class Activation_mix():
     def grad_cam(self, img, img_size, img_label):
         self.model.eval()
         hook_outputs = []
-
         def forward_hook(module, img, output):
             hook_outputs.append(torch.squeeze(output))
         def backward_hook(module, img, output):
@@ -48,7 +47,7 @@ class Activation_mix():
         # normalise
         cam_out = (cam_out + torch.abs(cam_out)) / 2
         cam_out = cam_out / torch.max(cam_out)
-
+        print(cam_out)
         upsampling = torch.nn.Upsample(scale_factor=img_size / len(cam_out), mode='bilinear', align_corners=False)
         resized_cam = upsampling(cam_out.unsqueeze(0).unsqueeze(0)).detach().squeeze().cpu().numpy()
         # print("making cam image")
@@ -119,6 +118,17 @@ class Activation_mix():
         target = (replace_target.unsqueeze(0), label.unsqueeze(0))
 
         return replace_data, target, lamb
+
+    def feature_map(self, img, img_size):
+        vis_model = nn.Sequential(
+            *nn.ModuleList(model.children())[:-2]
+        )
+        heatmap = vis_model(img)
+        cam = torch.mean(heatmap, dim=1).squeeze(0)
+        upsampling = torch.nn.Upsample(scale_factor=img_size / len(cam), mode='bilinear', align_corners=False)
+        resized_cam = upsampling(cam.unsqueeze(0).unsqueeze(0)).detach().squeeze().cpu().numpy()
+        return resized_cam
+
 
 if __name__=="__main__":
 
