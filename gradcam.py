@@ -121,7 +121,7 @@ class Activation_mix():
 
     def feature_map(self, img, img_size):
         vis_model = nn.Sequential(
-            *nn.ModuleList(model.children())[:-2]
+            *nn.ModuleList(self.model.children())[:-2]
         )
         heatmap = vis_model(img)
         cam = torch.mean(heatmap, dim=1).squeeze(0)

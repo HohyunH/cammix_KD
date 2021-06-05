@@ -61,7 +61,7 @@ def kd_train(model, teacher_model, train_loader, optimizer, cutmix_prob, alpha, 
 
                 # cam = grad.grad_cam(input_img, 224, img_label)
                 cam = grad.feature_map(input_img, 224)
-                replace_data, target, lamb = grad.teacher_cut_mix(input_img, img_label, cam, (150, 150), trainset)
+                replace_data, target, lamb = grad.teacher_cut_mix(input_img, img_label, cam, (100, 100), trainset)
 
                 replace_data = replace_data.to(device)
 
@@ -75,7 +75,7 @@ def kd_train(model, teacher_model, train_loader, optimizer, cutmix_prob, alpha, 
 
                 loss+=cut_loss
             loss = loss/len(input)
-            print("using cutmix loss")
+            # print("using cutmix loss")
             trn_plot.append(loss)
         else:
 
@@ -85,7 +85,7 @@ def kd_train(model, teacher_model, train_loader, optimizer, cutmix_prob, alpha, 
 
             output = model(input)
             loss = loss_fn_kd(output, label, teacher_outputs, alpha, T)
-        # print("using normal loss")
+            # print("using normal loss")
         trn_loss += loss
         trn_plot.append(loss)
 
@@ -95,11 +95,11 @@ def kd_train(model, teacher_model, train_loader, optimizer, cutmix_prob, alpha, 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        if trn_loss < best_loss:
-            print('Best performance at epoch: {}, average_loss : {}'.format(e, trn_loss))
-            best_loss = trn_loss
-            # save_model(model, saved_dir)
-            torch.save(model.state_dict(), './model/just_kd_model_18.pth')
+    if trn_loss < best_loss:
+        print('Best performance at epoch: {}, average_loss : {}'.format(e, trn_loss))
+        best_loss = trn_loss
+        # save_model(model, saved_dir)
+        torch.save(model.state_dict(), './model/just_kd_model_18.pth')
 
     trn_loss = trn_loss / len(train_loader)
 
@@ -145,7 +145,7 @@ if __name__=="__main__":
         'train': transforms.Compose([
             transforms.RandomRotation(5),
             transforms.RandomHorizontalFlip(),
-            transforms.RandomCrop(120),
+            # transforms.RandomCrop(120),
             transforms.Resize([224, 224]),
             transforms.ToTensor()
         ]),
@@ -162,22 +162,19 @@ if __name__=="__main__":
     model = model.to(device)
     num_ftrs = model.fc.in_features
     model.fc = nn.Linear(num_ftrs, 6)
-    model.load_state_dict(torch.load("./model/best_model_50.pth"))
+    model.load_state_dict(torch.load("./model/best_model_18.pth"))
 
-    if args.model == "CNN":
-        teacher_model = SimpleCNN()
+
+    if args.model == "resnet18":
+        teacher_model = models.resnet18(pretrained=True)
     else :
-        if args.model == "resnet18":
-            teacher_model = models.resnet18(pretrained=True)
-        else :
-            teacher_model = models.resnet50(pretrained=True)
-
-        num_ftrs = teacher_model.fc.in_features
-        teacher_model.fc = nn.Linear(num_ftrs, 6)
-        teacher_model.load_state_dict(torch.load("./model/just_kd_model_18.pth"))
+        teacher_model = models.resnet50(pretrained=True)
     teacher_model = teacher_model.to(device)
+    num_ftrs = teacher_model.fc.in_features
+    teacher_model.fc = nn.Linear(num_ftrs, 6)
     criterion = nn.CrossEntropyLoss().to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(teacher_model.parameters(), lr=0.001)
+    # teacher_model.load_state_dict(torch.load("./model/just_kd_model_18.pth"))
 
     trainset = Intel(data_dir="./dataset", mode='train', transform=data_transforms['train'])
     testset = Intel(data_dir="./dataset", mode='test', transform=data_transforms['test'])
