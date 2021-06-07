@@ -2,6 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
+## Halves the number of channels per layer in existing resnet18 model
+
 class BasicBlock(nn.Module):
     expansion = 1
     def __init__(self, in_channels, out_channels, stride=1):
@@ -88,6 +91,8 @@ class ResNet(nn.Module):
             elif isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.constant_(m.bias, 0)
+
+## vanilla CNN
 
 class SimpleCNN(nn.Module):
     def __init__(self):
