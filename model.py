@@ -146,6 +146,7 @@ if __name__ == "__main__":
 
 
     cnn_model = SimpleCNN().to(device)
+    print(cnn_model)
     x = torch.randn(3, 3, 224, 224).to(device)
     output = model(x)
     print(output.size())

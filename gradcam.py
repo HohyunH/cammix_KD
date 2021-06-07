@@ -45,7 +45,7 @@ class Activation_mix():
         # normalise
         cam_out = (cam_out + torch.abs(cam_out)) / 2
         cam_out = cam_out / torch.max(cam_out)
-        print(cam_out)
+
         upsampling = torch.nn.Upsample(scale_factor=img_size / len(cam_out), mode='bilinear', align_corners=False)
         resized_cam = upsampling(cam_out.unsqueeze(0).unsqueeze(0)).detach().squeeze().cpu().numpy()
 
@@ -164,6 +164,7 @@ if __name__=="__main__":
     grad = Activation_mix(model)
     input_img = trainset[0][0].unsqueeze(dim=0).to(device)
     img_label = trainset[0][1]
+
     # cam = grad.grad_cam(input_img, 224, img_label)
     cam = grad.feature_map(input_img, 224)
 

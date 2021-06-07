@@ -228,8 +228,8 @@ if __name__=="__main__":
 
     else :
         teacher_model = SimpleCNN().to(device)
-        num_ftrs = teacher_model.fc.in_features
-        teacher_model.fc = nn.Linear(num_ftrs, num_classes)
+        # num_ftrs = teacher_model.fc.in_features
+        # teacher_model.fc = nn.Linear(num_ftrs, num_classes)
 
     criterion = nn.CrossEntropyLoss().to(device)
     optimizer = torch.optim.Adam(teacher_model.parameters(), lr=0.001)
