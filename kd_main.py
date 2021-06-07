@@ -35,7 +35,6 @@ def base_kd_train(model, teacher_model, train_loader, optimizer, alpha, T):
     teacher_model.eval()
     teacher_model.to(device)
     trn_loss = 0
-    best_loss = np.inf
     for i, (input, label) in enumerate(train_loader):
         input, label = input.to(device), label.to(device)
 
@@ -52,10 +51,8 @@ def base_kd_train(model, teacher_model, train_loader, optimizer, alpha, T):
         loss.backward()
         optimizer.step()
 
-    if trn_loss < best_loss:
-        print('Best performance at epoch: {}, average_loss : {}'.format(e, trn_loss))
-        best_loss = trn_loss
-        torch.save(model.state_dict(), './model/base_kd_model_18.pth')
+    return trn_loss
+
 
 def kd_train(model, teacher_model, train_loader, optimizer, cutmix_prob, cam_mode, alpha, T):
 
@@ -63,7 +60,6 @@ def kd_train(model, teacher_model, train_loader, optimizer, cutmix_prob, cam_mod
     model.to(device)
     teacher_model.eval()
     teacher_model.to(device)
-    best_loss = np.inf
     grad = Activation_mix(model)
 
     trn_plot = []
@@ -124,10 +120,6 @@ def kd_train(model, teacher_model, train_loader, optimizer, cutmix_prob, cam_mod
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-    if trn_loss < best_loss:
-        print('Best performance at epoch: {}, average_loss : {}'.format(e, trn_loss))
-        best_loss = trn_loss
-        torch.save(model.state_dict(), './model/just_kd_model.pth')
 
     trn_loss = trn_loss / len(train_loader)
 
@@ -241,20 +233,31 @@ if __name__=="__main__":
     trainloader = DataLoader(trainset, batch_size=16, shuffle=True, drop_last=True)
     testloader = DataLoader(testset, batch_size=16, shuffle=False, drop_last=True)
 
+    best_loss = np.inf
 ## training baseline
 
     if args.method == "baseline":
         print("baseline knowledge distillation model")
         for e in range(1, args.epoch+1):
             print(f"{e} epochs processing")
-            base_kd_train(model, teacher_model, trainloader, optimizer, args.alpha, args.T)
+            trn_loss = base_kd_train(model, teacher_model, trainloader, optimizer, args.alpha, args.T)
+
+            if trn_loss < best_loss:
+                print('Best performance at epoch: {}, average_loss : {}'.format(e, trn_loss))
+                best_loss = trn_loss
+                torch.save(model.state_dict(), './model/base_kd_model_18.pth')
 
 ## training proposed method
     else:
         print("proposed knowledge distillation model")
         for e in range(1, args.epoch+1):
             print(f"{e} epochs processing")
-            kd_train(model, teacher_model, trainloader, optimizer, args.cammix_prob, args.cam, args.alpha, args.T)
+            trn_loss = kd_train(model, teacher_model, trainloader, optimizer, args.cammix_prob, args.cam, args.alpha, args.T)
+
+            if trn_loss < best_loss:
+                print('Best performance at epoch: {}, average_loss : {}'.format(e, trn_loss))
+                best_loss = trn_loss
+                torch.save(model.state_dict(), './model/just_kd_model.pth')
 
     print("teacher model Accuracy")
     test(model, testloader, device)
