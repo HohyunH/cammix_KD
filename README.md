@@ -1,6 +1,6 @@
 # cammix_KD
 
-#### 2021-2 Deep-learning class team project
+#### 2021-1 Deep-learning class team project
 
 ![image](https://user-images.githubusercontent.com/46701548/121029033-3b389680-c7e3-11eb-9bb2-bf8ac78b3f34.png)
 
