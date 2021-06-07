@@ -127,7 +127,7 @@ def kd_train(model, teacher_model, train_loader, optimizer, cutmix_prob, cam_mod
     if trn_loss < best_loss:
         print('Best performance at epoch: {}, average_loss : {}'.format(e, trn_loss))
         best_loss = trn_loss
-        torch.save(model.state_dict(), './model/just_kd_model_18.pth')
+        torch.save(model.state_dict(), './model/just_kd_model.pth')
 
     trn_loss = trn_loss / len(train_loader)
 
@@ -162,6 +162,7 @@ if __name__=="__main__":
     parser.add_argument('--T', type=float, default="0.1", help='Input the temperature of softmax probability')
     parser.add_argument('--teacher', type=str, default='resnet18', help='determining the kind of model')
     parser.add_argument('--model', type=str, default='resnet18', help='determining the kind of model')
+    parser.add_argument('--cam', type=str, default='grad', help='determining the mode of extract img')
     parser.add_argument('--cammix_prob', type=float, default='0.7', help='Input the probability of cammix')
     parser.add_argument('--epoch', type=int, default='5', help='Input the number of epoch')
     parser.add_argument('--device', type=str, default='cpu', help='determining the kind of device')
