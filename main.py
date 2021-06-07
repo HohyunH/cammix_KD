@@ -78,11 +78,14 @@ def main():
 
     data_transforms = {
         'train': transforms.Compose([
-            transforms.Resize([120, 120]),
+            transforms.RandomRotation(5),
+            transforms.RandomHorizontalFlip(),
+            # transforms.RandomCrop(120),
+            transforms.Resize([224, 224]),
             transforms.ToTensor()
         ]),
         'test': transforms.Compose([
-            transforms.Resize([120, 120]),
+            transforms.Resize([224, 224]),
             transforms.ToTensor()
         ]),
     }
@@ -97,7 +100,9 @@ def main():
     trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, drop_last=True)
     testloader = DataLoader(testset, batch_size=batch_size, shuffle=False, drop_last=True)
 
-    model = torchvision.models.resnet18(pretrained=True)
+    # model = torchvision.models.resnet18(pretrained=True)
+    # model = torchvision.models.resnet50(pretrained=True)
+    model = torchvision.models.wide_resnet50_2(pretrained=True)
     model = model.to(device)
 
     for param in model.parameters():
@@ -112,7 +117,7 @@ def main():
     for epoch in range(epochs):
         print(f"------{epoch + 1} epoch in progress------")
 
-        trn_loss = train(epoch, model, trainloader, device, criterion, optimizer, path='./model/best_model_small.pth')
+        trn_loss = train(epoch, model, trainloader, device, criterion, optimizer, path='./model/best_model_w50.pth')
         test(model, testloader, device)
 
 
