@@ -18,7 +18,7 @@ from gradcam import Activation_mix
 def small_resnet18():
     return ResNet(BasicBlock, [2, 2, 2, 2])
 
-
+## loss function for knowledge distillation
 def loss_fn_kd(outputs, labels, teacher_outputs, alpha, T):
 
     KD_loss = nn.KLDivLoss()(F.log_softmax(outputs/T, dim=1),
