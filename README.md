@@ -38,6 +38,14 @@ python kd_main.py --alpha 0.5 --T 0.1 --teacher resnet18 --teacher resnet18 --mo
 ![image](https://user-images.githubusercontent.com/46701548/138590895-614b9aa5-de1b-4060-a410-f5ca3af56dd5.png)
 여기서 L은 손실함수, S는 Student model, T는 Teacher model을 의미합니다. 또한 (x,y)는 하나의 이미지와 그 레이블,θ는 모델의 학습 파라미터, τ는 temperature를 의미.
 
+### Models
+- Wide ResNet50
+- ResNet50
+- ResNet18
+- Small ResNet18*
+  -> ![image](https://user-images.githubusercontent.com/46701548/138591333-bac2d339-5c3d-4f28-8bb9-2757dc83d2aa.png)
+* Small ResNet18은 ResNet18의 모든 layer의 dimension을 반으로 줄인 모델이다.
+
 
 ### Experiment
 
