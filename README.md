@@ -1,16 +1,15 @@
 # cammix_KD
 
-#### 2021-1 Deep-learning class team project
+### 2021-1 Deep-learning class team project
 
 ### How to Use
 
 <pre>
 <code>
-
 python kd_main.py --alpha 0.5 --T 0.1 --teacher resnet18 --teacher resnet18 --model resnet18 --cam grad --cammix_prob 0.7 --epoch 5 --device [cuda, cpu] --method baseline
-
 </code>
 </pre>
+
 
 ## Introduction
 
